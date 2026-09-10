@@ -1,14 +1,46 @@
+import requests
+import pandas as pd
+import datetime
 import hmac
 import hashlib
 import json
 import time
-import requests
-import pandas as pd
 import streamlit as st
 
-# Streamlit secrets se securely keys fetch karna
-API_KEY = st.secrets["COINDCX_API_KEY"]
-SECRET_KEY = st.secrets["COINDCX_SECRET_KEY"]
+# Securely fetching keys (Using try-except so public data doesn't crash if keys are missing)
+try:
+    API_KEY = st.secrets["COINDCX_API_KEY"]
+    SECRET_KEY = st.secrets["COINDCX_SECRET_KEY"]
+except KeyError:
+    API_KEY = ""
+    SECRET_KEY = ""
+
+def fetch_coindcx_klines(symbol, interval="1h"):
+    # CoinDCX Public API for candles (B market for USDT pairs)
+    url = f"https://public.coindcx.com/market_data/candles?pair=B-{symbol}&interval={interval}"
+    
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        
+        # Convert to Pandas DataFrame
+        df = pd.DataFrame(data)
+        
+        # CoinDCX returns data sorted from newest to oldest. Reverse it for indicators.
+        if not df.empty:
+            df = df.iloc[::-1].reset_index(drop=True)
+            df['open'] = pd.to_numeric(df['open'])
+            df['high'] = pd.to_numeric(df['high'])
+            df['low'] = pd.to_numeric(df['low'])
+            df['close'] = pd.to_numeric(df['close'])
+            df['volume'] = pd.to_numeric(df['volume'])
+            
+            return df, df['close'].iloc[-1]
+        else:
+            return pd.DataFrame(), 0
+    except Exception as e:
+        print(f"Error fetching {symbol}: {e}")
+        return pd.DataFrame(), 0
 
 def create_signature(payload_str):
     secret_bytes = bytes(SECRET_KEY, 'utf-8')
@@ -16,6 +48,10 @@ def create_signature(payload_str):
     return signature
 
 def get_fno_positions():
+    # Only run if keys exist
+    if not API_KEY or not SECRET_KEY:
+        return []
+        
     # CoinDCX Derivatives endpoint for active positions
     url = "https://api.coindcx.com/exchange/v1/derivatives/positions" 
     
@@ -24,7 +60,6 @@ def get_fno_positions():
         "timestamp": timestamp
     }
     
-    # Payload must be a tightly packed JSON string without spaces
     payload_str = json.dumps(payload, separators=(',', ':'))
     
     headers = {
