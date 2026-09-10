@@ -78,8 +78,35 @@ if not btc_df.empty:
 st.markdown(f"<div class='btc-banner {btc_class}'><span>👑 GLOBAL BTC (4H) TREND:</span> <span>{btc_trend}</span></div>", unsafe_allow_html=True)
 
 # 4. F&O Pairs Array
-pairs = ["BTC_USDT", "ETH_USDT", "SOL_USDT", "AVAX_USDT", "SUI_USDT"]
-
+# 🚀 THE ULTIMATE PRO F&O WATCHLIST (55+ High Volume Coins)
+pairs = [
+    # 👑 Volume Kings (Layer 1 & Core - Safest for big capital)
+    "BTC_USDT", "ETH_USDT", "SOL_USDT", "BNB_USDT", "XRP_USDT",
+    "ADA_USDT", "AVAX_USDT", "DOT_USDT", "NEAR_USDT", "FTM_USDT",
+    "ATOM_USDT", "SUI_USDT", "SEI_USDT", "APT_USDT", "INJ_USDT",
+    "TRX_USDT", "LTC_USDT", "BCH_USDT",
+    
+    # ⚡ Layer 2 & Scaling (Fast movers, great for scalping)
+    "MATIC_USDT", "ARB_USDT", "OP_USDT", "STRK_USDT", "IMX_USDT", 
+    "MNT_USDT", "STX_USDT",
+    
+    # 🏦 DeFi & Oracles (Strong institutional backing)
+    "LINK_USDT", "UNI_USDT", "AAVE_USDT", "CRV_USDT", "MKR_USDT",
+    "LDO_USDT", "RUNE_USDT", "DYDX_USDT", "JUP_USDT",
+    
+    # 🤖 AI & DePIN (Current market hype & crazy momentum)
+    "RNDR_USDT", "FET_USDT", "TAO_USDT", "WLD_USDT", "GRT_USDT",
+    "ICP_USDT", "FIL_USDT",
+    
+    # 🎮 Gaming & Metaverse (Good for volatility breakouts)
+    "GALA_USDT", "SAND_USDT", "MANA_USDT", "AXS_USDT",
+    
+    # 🔥 Solid Altcoins (Reliable price action)
+    "ALGO_USDT", "VET_USDT", "TIA_USDT", "HBAR_USDT",
+    
+    # 🐶 Meme Coins (High Risk/High Reward - Extremely volatile)
+    "DOGE_USDT", "SHIB_USDT", "PEPE_USDT", "WIF_USDT", "FLOKI_USDT", "BONK_USDT"
+]
 # 5. Data Fetch & UI Rendering
 for pair in pairs:
     df, live_price = fetch_coindcx_klines(pair, interval=timeframe)
