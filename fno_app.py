@@ -56,6 +56,8 @@ with c3:
     st.write("")
     st.write("")
     auto_refresh = st.checkbox("☑ Auto-Refresh (3 Min)", value=True)
+    # Timer ka Placeholder yahan upar bana diya gaya hai (Scan button ke bagal mein)
+    top_timer_slot = st.empty()
 with c4:
     st.write("")
     st.write("")
@@ -179,18 +181,15 @@ for item in analyzed_results:
     card_html += '</div>'
     st.markdown(card_html, unsafe_allow_html=True)
 
-# 7. Auto-Refresh Logic (Timer sabse niche chalega)
+# 7. Auto-Refresh Logic (Timer upar wale slot ko update karega)
 if auto_refresh:
-    # Sabhi cards render hone ke baad bottom par ek empty space banayenge
-    bottom_timer_slot = st.empty()
-    
     for seconds_left in range(180, 0, -1):
         mins, secs = divmod(seconds_left, 60)
         timeformat = f"{mins:02d}:{secs:02d}"
         
-        # UI mein sabse niche timer update karega har second
-        bottom_timer_slot.markdown(
-            f"<div style='text-align: center; color:#FFB300; font-size:14px; font-weight:bold; padding: 20px 0;'>⏳ Next Market Scan in: {timeformat}</div>", 
+        # Upar banaye gaye top_timer_slot ko har second update kar rahe hain
+        top_timer_slot.markdown(
+            f"<div style='color:#FFB300; font-size:13px; font-weight:bold; margin-top: 6px;'>⏳ Next Scan in: {timeformat}</div>", 
             unsafe_allow_html=True
         )
         time.sleep(1)
