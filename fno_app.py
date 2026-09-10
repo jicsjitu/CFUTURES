@@ -78,80 +78,108 @@ if not btc_df.empty:
 st.markdown(f"<div class='btc-banner {btc_class}'><span>👑 GLOBAL BTC (4H) TREND:</span> <span>{btc_trend}</span></div>", unsafe_allow_html=True)
 
 # 4. F&O Pairs Array
-# 🚀 THE ULTIMATE PRO F&O WATCHLIST (55+ High Volume Coins)
 pairs = [
-    # 👑 Volume Kings (Layer 1 & Core - Safest for big capital)
+    # Volume Kings (Layer 1 & Core - Safest for big capital)
     "BTC_USDT", "ETH_USDT", "SOL_USDT", "BNB_USDT", "XRP_USDT",
     "ADA_USDT", "AVAX_USDT", "DOT_USDT", "NEAR_USDT", "FTM_USDT",
     "ATOM_USDT", "SUI_USDT", "SEI_USDT", "APT_USDT", "INJ_USDT",
     "TRX_USDT", "LTC_USDT", "BCH_USDT",
     
-    # ⚡ Layer 2 & Scaling (Fast movers, great for scalping)
+    # Layer 2 & Scaling (Fast movers, great for scalping)
     "MATIC_USDT", "ARB_USDT", "OP_USDT", "STRK_USDT", "IMX_USDT", 
     "MNT_USDT", "STX_USDT",
     
-    # 🏦 DeFi & Oracles (Strong institutional backing)
+    # DeFi & Oracles (Strong institutional backing)
     "LINK_USDT", "UNI_USDT", "AAVE_USDT", "CRV_USDT", "MKR_USDT",
     "LDO_USDT", "RUNE_USDT", "DYDX_USDT", "JUP_USDT",
     
-    # 🤖 AI & DePIN (Current market hype & crazy momentum)
+    # AI & DePIN (Current market hype & crazy momentum)
     "RNDR_USDT", "FET_USDT", "TAO_USDT", "WLD_USDT", "GRT_USDT",
     "ICP_USDT", "FIL_USDT",
     
-    # 🎮 Gaming & Metaverse (Good for volatility breakouts)
+    # Gaming & Metaverse (Good for volatility breakouts)
     "GALA_USDT", "SAND_USDT", "MANA_USDT", "AXS_USDT",
     
-    # 🔥 Solid Altcoins (Reliable price action)
+    # Solid Altcoins (Reliable price action)
     "ALGO_USDT", "VET_USDT", "TIA_USDT", "HBAR_USDT",
     
-    # 🐶 Meme Coins (High Risk/High Reward - Extremely volatile)
+    # Meme Coins (High Risk/High Reward - Extremely volatile)
     "DOGE_USDT", "SHIB_USDT", "PEPE_USDT", "WIF_USDT", "FLOKI_USDT", "BONK_USDT"
 ]
-# 5. Data Fetch & UI Rendering
+
+# 5. Data Fetch, Analyze & Sort Logic
+analyzed_results = []
+
 for pair in pairs:
     df, live_price = fetch_coindcx_klines(pair, interval=timeframe)
     
     if not df.empty:
         analysis = analyze_fno_trade(df)
         
+        # Apply Filter
         if filter_sig != "All" and filter_sig not in analysis['signal'].replace(" 🟢", "").replace(" 🔴", "").replace(" ⚪", ""):
             continue
-        
-        is_long = "LONG" in analysis['signal']
-        is_short = "SHORT" in analysis['signal']
-        
-        sig_class = "buy-text" if is_long else "sell-text" if is_short else "wait-text"
-        icon = "🚀 BUY TREND" if is_long else "🩸 SELL TREND" if is_short else "⏳ WAIT (Sideways)"
-        arrow = "↗" if is_long else "↘" if is_short else "→"
+            
+        # Determine Sorting Priority (1 = LONG, 2 = SHORT, 3 = WAIT)
+        if "LONG" in analysis['signal']:
+            priority = 1
+        elif "SHORT" in analysis['signal']:
+            priority = 2
+        else:
+            priority = 3
+            
+        analyzed_results.append({
+            "pair": pair,
+            "live_price": live_price,
+            "analysis": analysis,
+            "priority": priority,
+            "score": abs(analysis['score'])
+        })
 
-        # Fixing the Markdown Code Block Issue by keeping HTML strictly on single lines
-        card_html = (
-            f'<div class="pro-card">'
-            f'<div class="flex-row">'
-            f'<div style="width: 15%;"><div class="lbl">Pair</div><div class="val {sig_class}">{pair.replace("_", "/")}</div></div>'
-            f'<div style="width: 15%;"><div class="lbl">Live Price</div><div class="val">${live_price:,.4f} {arrow}</div></div>'
-            f'<div style="width: 20%;"><div class="lbl">Signal</div><div class="val {sig_class}">{icon}</div></div>'
-            f'<div style="width: 15%;"><div class="lbl">Score / RSI</div><div class="val">{analysis["score"]} <span style="font-size:12px; color:#8B8B9E;">({analysis["rsi"]})</span></div></div>'
-            f'<div style="width: 35%;"><div class="lbl">Analysis Logic</div><div style="color:#A0A0B0; font-size:13px; font-weight:600;">{analysis["reason"]}</div></div>'
+# Sort list: First by priority (LONG -> SHORT -> WAIT), then by highest score
+analyzed_results = sorted(analyzed_results, key=lambda x: (x['priority'], -x['score']))
+
+# 6. UI Rendering (Sorted Cards)
+for item in analyzed_results:
+    pair = item['pair']
+    live_price = item['live_price']
+    analysis = item['analysis']
+    
+    is_long = "LONG" in analysis['signal']
+    is_short = "SHORT" in analysis['signal']
+    
+    sig_class = "buy-text" if is_long else "sell-text" if is_short else "wait-text"
+    icon = "🚀 BUY TREND" if is_long else "🩸 SELL TREND" if is_short else "⏳ WAIT (Sideways)"
+    arrow = "↗" if is_long else "↘" if is_short else "→"
+
+    # HTML Card Rendering
+    card_html = (
+        f'<div class="pro-card">'
+        f'<div class="flex-row">'
+        f'<div style="width: 15%;"><div class="lbl">Pair</div><div class="val {sig_class}">{pair.replace("_", "/")}</div></div>'
+        f'<div style="width: 15%;"><div class="lbl">Live Price</div><div class="val">${live_price:,.4f} {arrow}</div></div>'
+        f'<div style="width: 20%;"><div class="lbl">Signal</div><div class="val {sig_class}">{icon}</div></div>'
+        f'<div style="width: 15%;"><div class="lbl">Score / RSI</div><div class="val">{analysis["score"]} <span style="font-size:12px; color:#8B8B9E;">({analysis["rsi"]})</span></div></div>'
+        f'<div style="width: 35%;"><div class="lbl">Analysis Logic</div><div style="color:#A0A0B0; font-size:13px; font-weight:600;">{analysis["reason"]}</div></div>'
+        f'</div>'
+    )
+    
+    if is_long or is_short:
+        card_html += (
+            f'<div class="trade-zone">'
+            f'<div><span class="lbl">ENTRY RANGE:</span> <strong style="color:#E0E0E6;">{analysis["entry_range"]}</strong></div>'
+            f'<div><span class="lbl">SAFE QTY (2% Risk):</span> <strong style="color:#2196F3;">{analysis["qty"]} Coins</strong></div>'
+            f'<div><span class="lbl">TARGET:</span> <strong style="color:#00E676;">${analysis["target"]}</strong></div>'
+            f'<div><span class="lbl">TRAIL-SL:</span> <strong style="color:#FFB300;">${analysis["tsl"]}</strong></div>'
+            f'<div><span class="lbl">STOP-LOSS:</span> <strong style="color:#FF3D00;">${analysis["sl"]}</strong></div>'
+            f'<div><span class="lbl">R:R RATIO:</span> <strong style="color:#E0E0E6;">{analysis["rr"]}</strong></div>'
             f'</div>'
         )
         
-        if is_long or is_short:
-            card_html += (
-                f'<div class="trade-zone">'
-                f'<div><span class="lbl">ENTRY RANGE:</span> <strong style="color:#E0E0E6;">{analysis["entry_range"]}</strong></div>'
-                f'<div><span class="lbl">SAFE QTY (2% Risk):</span> <strong style="color:#2196F3;">{analysis["qty"]} Coins</strong></div>'
-                f'<div><span class="lbl">TARGET:</span> <strong style="color:#00E676;">${analysis["target"]}</strong></div>'
-                f'<div><span class="lbl">TRAIL-SL:</span> <strong style="color:#FFB300;">${analysis["tsl"]}</strong></div>'
-                f'<div><span class="lbl">STOP-LOSS:</span> <strong style="color:#FF3D00;">${analysis["sl"]}</strong></div>'
-                f'<div><span class="lbl">R:R RATIO:</span> <strong style="color:#E0E0E6;">{analysis["rr"]}</strong></div>'
-                f'</div>'
-            )
-            
-        card_html += '</div>'
-        st.markdown(card_html, unsafe_allow_html=True)
+    card_html += '</div>'
+    st.markdown(card_html, unsafe_allow_html=True)
 
-# 6. Auto-Refresh Logic
+# 7. Auto-Refresh Logic
 if auto_refresh:
     time.sleep(180)
     st.rerun()
