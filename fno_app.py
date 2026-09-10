@@ -115,6 +115,7 @@ for pair in pairs:
                 f'<div><span class="lbl">ENTRY RANGE:</span> <strong style="color:#E0E0E6;">{analysis["entry_range"]}</strong></div>'
                 f'<div><span class="lbl">SAFE QTY (2% Risk):</span> <strong style="color:#2196F3;">{analysis["qty"]} Coins</strong></div>'
                 f'<div><span class="lbl">TARGET:</span> <strong style="color:#00E676;">${analysis["target"]}</strong></div>'
+                f'<div><span class="lbl">TRAIL-SL:</span> <strong style="color:#FFB300;">${analysis["tsl"]}</strong></div>'
                 f'<div><span class="lbl">STOP-LOSS:</span> <strong style="color:#FF3D00;">${analysis["sl"]}</strong></div>'
                 f'<div><span class="lbl">R:R RATIO:</span> <strong style="color:#E0E0E6;">{analysis["rr"]}</strong></div>'
                 f'</div>'
