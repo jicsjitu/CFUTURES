@@ -7,20 +7,18 @@ from fno_strategy import analyze_fno_trade
 # 1. Setup Page Config
 st.set_page_config(page_title="PRO F&O Terminal", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. Custom CSS for exact matching UI & PRO HTML Cards
+# 2. Custom CSS
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
     .stApp { background-color: #0B0B0F; color: #FFFFFF; font-family: 'Inter', sans-serif; }
     
-    /* Fixed Scan Button */
     div[data-testid="column"] button {
         background-color: #1A1A24 !important; color: #00E676 !important;
         border: 1px solid #00E676 !important; border-radius: 6px; font-weight: bold; width: 100%;
     }
     div[data-testid="column"] button:hover { background-color: #00E676 !important; color: #000000 !important; }
     
-    /* Clean HTML Cards (No Empty Bars) */
     .pro-card {
         background: #14141C; border: 1px solid #282836; border-radius: 12px;
         padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
@@ -48,7 +46,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. Top Controls Row (Matching Old UI framework but with new styling)
+# 3. Top Controls Row
 c1, c2, c3, c4, c5 = st.columns([1.5, 1.5, 2, 2, 2])
 with c1:
     timeframe = st.selectbox("⌚ TIMEFRAME", ["15m", "1h", "4h"], index=1)
@@ -89,7 +87,6 @@ for pair in pairs:
     if not df.empty:
         analysis = analyze_fno_trade(df)
         
-        # Apply Filter
         if filter_sig != "All" and filter_sig not in analysis['signal'].replace(" 🟢", "").replace(" 🔴", "").replace(" ⚪", ""):
             continue
         
@@ -100,33 +97,33 @@ for pair in pairs:
         icon = "🚀 BUY TREND" if is_long else "🩸 SELL TREND" if is_short else "⏳ WAIT (Sideways)"
         arrow = "↗" if is_long else "↘" if is_short else "→"
 
-        # Pure HTML Card Layout
-        card_html = f"""
-        <div class="pro-card">
-            <div class="flex-row">
-                <div style="width: 15%;"><div class="lbl">Pair</div><div class="val {sig_class}">{pair.replace('_', '/')}</div></div>
-                <div style="width: 15%;"><div class="lbl">Live Price</div><div class="val">${live_price:,.4f} {arrow}</div></div>
-                <div style="width: 20%;"><div class="lbl">Signal</div><div class="val {sig_class}">{icon}</div></div>
-                <div style="width: 15%;"><div class="lbl">Score / RSI</div><div class="val">{analysis['score']} <span style="font-size:12px; color:#8B8B9E;">({analysis['rsi']})</span></div></div>
-                <div style="width: 35%;"><div class="lbl">Analysis Logic</div><div style="color:#A0A0B0; font-size:13px; font-weight:600;">{analysis['reason']}</div></div>
-            </div>
-        """
+        # Fixing the Markdown Code Block Issue by keeping HTML strictly on single lines
+        card_html = (
+            f'<div class="pro-card">'
+            f'<div class="flex-row">'
+            f'<div style="width: 15%;"><div class="lbl">Pair</div><div class="val {sig_class}">{pair.replace("_", "/")}</div></div>'
+            f'<div style="width: 15%;"><div class="lbl">Live Price</div><div class="val">${live_price:,.4f} {arrow}</div></div>'
+            f'<div style="width: 20%;"><div class="lbl">Signal</div><div class="val {sig_class}">{icon}</div></div>'
+            f'<div style="width: 15%;"><div class="lbl">Score / RSI</div><div class="val">{analysis["score"]} <span style="font-size:12px; color:#8B8B9E;">({analysis["rsi"]})</span></div></div>'
+            f'<div style="width: 35%;"><div class="lbl">Analysis Logic</div><div style="color:#A0A0B0; font-size:13px; font-weight:600;">{analysis["reason"]}</div></div>'
+            f'</div>'
+        )
         
         if is_long or is_short:
-            card_html += f"""
-            <div class="trade-zone">
-                <div><span class="lbl">ENTRY RANGE:</span> <strong style="color:#E0E0E6;">{analysis['entry_range']}</strong></div>
-                <div><span class="lbl">SAFE QTY (2% Risk):</span> <strong style="color:#2196F3;">{analysis['qty']} Coins</strong></div>
-                <div><span class="lbl">TARGET:</span> <strong style="color:#00E676;">${analysis['target']}</strong></div>
-                <div><span class="lbl">STOP-LOSS:</span> <strong style="color:#FF3D00;">${analysis['sl']}</strong></div>
-                <div><span class="lbl">R:R RATIO:</span> <strong style="color:#E0E0E6;">{analysis['rr']}</strong></div>
-            </div>
-            """
+            card_html += (
+                f'<div class="trade-zone">'
+                f'<div><span class="lbl">ENTRY RANGE:</span> <strong style="color:#E0E0E6;">{analysis["entry_range"]}</strong></div>'
+                f'<div><span class="lbl">SAFE QTY (2% Risk):</span> <strong style="color:#2196F3;">{analysis["qty"]} Coins</strong></div>'
+                f'<div><span class="lbl">TARGET:</span> <strong style="color:#00E676;">${analysis["target"]}</strong></div>'
+                f'<div><span class="lbl">STOP-LOSS:</span> <strong style="color:#FF3D00;">${analysis["sl"]}</strong></div>'
+                f'<div><span class="lbl">R:R RATIO:</span> <strong style="color:#E0E0E6;">{analysis["rr"]}</strong></div>'
+                f'</div>'
+            )
             
-        card_html += "</div>"
+        card_html += '</div>'
         st.markdown(card_html, unsafe_allow_html=True)
 
-# 6. Auto-Refresh Logic (Runs at the very end of the script)
+# 6. Auto-Refresh Logic
 if auto_refresh:
-    time.sleep(180) # 180 seconds = 3 minutes
+    time.sleep(180)
     st.rerun()
