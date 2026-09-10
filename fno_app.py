@@ -4,58 +4,59 @@ import time
 from fno_data import fetch_coindcx_klines
 from fno_strategy import analyze_fno_trade
 
-# 1. Setup Page Config (Full Width, No Title)
+# 1. Setup Page Config
 st.set_page_config(page_title="PRO F&O Terminal", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. Ultra-Clean Custom CSS (Hidden default headers, premium cards)
+# 2. Custom CSS for exact matching UI
 st.markdown("""
     <style>
-    /* Hide Streamlit Branding */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* App Background */
-    .stApp { background-color: #09090B; color: #FAFAFA; font-family: 'Inter', sans-serif; }
+    .stApp { background-color: #121212; color: #FFFFFF; font-family: 'Inter', sans-serif; }
     
-    /* Premium Hover Cards */
     .card { 
-        background-color: #121214; 
-        padding: 20px 24px; 
-        border-radius: 12px; 
-        border: 1px solid #27272A;
-        margin-bottom: 16px; 
-        transition: all 0.2s ease-in-out;
+        background-color: #1a1a24; 
+        padding: 16px 20px; 
+        border-radius: 10px; 
+        border: 1px solid #2d2d3d;
+        margin-bottom: 12px; 
     }
-    .card:hover {
-        border-color: #3F3F46;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
+    .label { color: #8E8E93; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; display: block;}
+    .val { font-size: 15px; font-weight: bold; color: #FFFFFF;}
     
-    /* Typography */
-    .label { color: #A1A1AA; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;}
-    .val { font-size: 16px; font-weight: 700; margin-top: 4px; color: #FAFAFA; }
+    /* Dynamic Pair Colors */
+    .pair-long { color: #00E676; font-size: 18px; font-weight: 900; text-shadow: 0 0 8px rgba(0,230,118,0.3);}
+    .pair-short { color: #FF3D00; font-size: 18px; font-weight: 900; text-shadow: 0 0 8px rgba(255,61,0,0.3);}
+    .pair-wait { color: #FFC107; font-size: 18px; font-weight: 900; }
     
-    /* Signal Colors */
-    .green-text { color: #10B981; text-shadow: 0 0 10px rgba(16,185,129,0.2); }
-    .red-text { color: #EF4444; text-shadow: 0 0 10px rgba(239,68,68,0.2); }
-    .wait-text { color: #F59E0B; }
-    
-    /* Top Controls Row */
-    .controls-container { padding-bottom: 20px; border-bottom: 1px solid #27272A; margin-bottom: 24px; }
+    /* Signal Text Colors */
+    .sig-long { color: #00E676; font-weight: bold; }
+    .sig-short { color: #FF3D00; font-weight: bold; }
+    .sig-wait { color: #FFC107; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. Top Controls (Minimalist)
-st.markdown('<div class="controls-container">', unsafe_allow_html=True)
-col1, col2, col3 = st.columns([2, 2, 8])
-with col1:
-    timeframe = st.selectbox("TIMEFRAME", ["15m", "1h", "4h"], index=1, label_visibility="collapsed")
-with col2:
-    st.button("🔄 SYNC DATA")
-with col3:
-    st.markdown("<div style='text-align: right; padding-top: 8px;'><span class='label'>F&O CAPITAL</span><br><span class='val'>$1,000 USDT</span></div>", unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+# 3. Top Controls Row (Matching Old UI)
+c1, c2, c3, c4, c5 = st.columns([1.5, 1.5, 2, 2, 2])
+with c1:
+    timeframe = st.selectbox("⌚ Timeframe", ["15m", "1h", "4h"], index=1)
+with c2:
+    filter_sig = st.selectbox("🔍 Filter Signal", ["All", "LONG", "SHORT", "WAIT"])
+with c3:
+    st.write("")
+    st.write("")
+    auto_refresh = st.checkbox("☑ Auto-Refresh (3 Min)", value=True)
+with c4:
+    st.write("")
+    st.write("")
+    if st.button("⚡ Scan Market"):
+        st.rerun()
+with c5:
+    st.markdown("<div style='text-align: right; padding-top: 15px;'><span style='color:#8E8E93;'>CAPITAL REQ:</span> <b>$1,000 USDT</b></div>", unsafe_allow_html=True)
+
+st.markdown("<hr style='border-color: #2d2d3d; margin-top: 0px;'>", unsafe_allow_html=True)
 
 # 4. F&O Pairs Array
 pairs = ["BTC_USDT", "ETH_USDT", "SOL_USDT", "AVAX_USDT", "SUI_USDT"]
@@ -67,36 +68,54 @@ for pair in pairs:
     if not df.empty:
         analysis = analyze_fno_trade(df)
         
+        # Apply Filter
+        if filter_sig != "All" and filter_sig not in analysis['signal']:
+            continue
+        
+        # Color Formatting logic
         if "LONG" in analysis['signal']:
-            sig_html = f"<span class='val green-text'>LONG 🟢</span>"
+            pair_class = "pair-long"
+            sig_class = "sig-long"
+            icon = "🚀 BUY TREND 🚀"
         elif "SHORT" in analysis['signal']:
-            sig_html = f"<span class='val red-text'>SHORT 🔴</span>"
+            pair_class = "pair-short"
+            sig_class = "sig-short"
+            icon = "🩸 SELL TREND 🩸"
         else:
-            sig_html = f"<span class='val wait-text'>WAIT ⚪</span>"
+            pair_class = "pair-wait"
+            sig_class = "sig-wait"
+            icon = "⏳ WAIT ⏳"
 
+        # Card HTML
         with st.container():
             st.markdown(f'<div class="card">', unsafe_allow_html=True)
             
-            c1, c2, c3, c4, c5 = st.columns([1.5, 1.5, 1.5, 1, 2.5])
+            cols = st.columns([1.5, 1.5, 1.5, 1, 2.5])
             
-            with c1:
-                st.markdown(f"<div class='label'>PAIR</div><div class='val'>{pair.replace('_', '/')}</div>", unsafe_allow_html=True)
-            with c2:
-                st.markdown(f"<div class='label'>PRICE</div><div class='val'>${live_price:,.4f}</div>", unsafe_allow_html=True)
-            with c3:
-                st.markdown(f"<div class='label'>SIGNAL</div><div>{sig_html}</div>", unsafe_allow_html=True)
-            with c4:
-                st.markdown(f"<div class='label'>SCORE</div><div class='val'>{analysis['score']}</div>", unsafe_allow_html=True)
-            with c5:
-                st.markdown(f"<div class='label'>LOGIC</div><div class='val' style='color:#D4D4D8; font-size:14px;'>{analysis['reason']}</div>", unsafe_allow_html=True)
+            with cols[0]:
+                st.markdown(f"<span class='label'>PAIR (Perpetual)</span><span class='{pair_class}'>{pair.replace('_', '/')}</span>", unsafe_allow_html=True)
+            with cols[1]:
+                st.markdown(f"<span class='label'>LIVE PRICE</span><span class='val'>${live_price:,.4f}</span>", unsafe_allow_html=True)
+            with cols[2]:
+                st.markdown(f"<span class='label'>SIGNAL</span><span class='{sig_class}'>{icon}</span>", unsafe_allow_html=True)
+            with cols[3]:
+                st.markdown(f"<span class='label'>SCORE / RSI</span><span class='val'>{analysis['score']}</span> <span style='color:#8E8E93; font-size:12px;'>({analysis['rsi']})</span>", unsafe_allow_html=True)
+            with cols[4]:
+                st.markdown(f"<span class='label'>ANALYSIS REASON</span><span style='color:#B0BEC5; font-size:14px;'>{analysis['reason']}</span>", unsafe_allow_html=True)
 
-            if analysis['signal'] != "WAIT ⚪":
+            # Target & Stop-Loss Row (Only for active trades)
+            if "WAIT" not in analysis['signal']:
                 st.markdown(f"""
-                <div style='margin-top: 16px; padding-top: 12px; border-top: 1px dashed #27272A; display: flex; justify-content: space-between; font-size: 13px;'>
-                    <span><span class='label'>TARGET:</span> <strong style='color:#10B981;'>${analysis['target']}</strong></span>
-                    <span><span class='label'>STOP-LOSS:</span> <strong style='color:#EF4444;'>${analysis['sl']}</strong></span>
-                    <span><span class='label'>LEVERAGE:</span> <strong>{analysis['leverage']}</strong></span>
+                <div style='margin-top: 12px; padding-top: 10px; display: flex; justify-content: space-between; font-size: 13px;'>
+                    <span><span style='color: #8E8E93;'>TARGET:</span> <strong style='color:#00E676;'>${analysis['target']}</strong></span>
+                    <span><span style='color: #8E8E93;'>STOP-LOSS (ATR):</span> <strong style='color:#FF3D00;'>${analysis['sl']}</strong></span>
+                    <span><span style='color: #8E8E93;'>LEVERAGE:</span> <strong style='color:#2196F3;'>{analysis['leverage']}</strong></span>
                 </div>
                 """, unsafe_allow_html=True)
                 
             st.markdown('</div>', unsafe_allow_html=True)
+
+# 6. Auto-Refresh Logic (Runs at the very end of the script)
+if auto_refresh:
+    time.sleep(180) # 180 seconds = 3 minutes
+    st.rerun()
