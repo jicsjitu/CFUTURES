@@ -76,7 +76,7 @@ def analyze_fno_trade(df, capital=1000, risk_pct=0.02):
 
     # 4. Long/Short Buildup (Proxy OI Data) -> Max 20
     price_trend_up = latest['close'] > df['close'].iloc[-5]
-    vol_trend_up = latest['volume'] > df['VOL_SMA']
+    vol_trend_up = latest['volume'] > latest['VOL_SMA']  # <-- FIXED LINE HERE
 
     if price_trend_up and vol_trend_up:
         score += 20
@@ -91,13 +91,13 @@ def analyze_fno_trade(df, capital=1000, risk_pct=0.02):
 
     # 6. Flexible Filters (No Hard Blocks to avoid missing trades)
     is_fake_pump = False
-    if latest['volume'] < latest['VOL_SMA'] * 0.6: # Relaxed volume trap filter
+    if latest['volume'] < latest['VOL_SMA'] * 0.6: 
         is_fake_pump = True
         reason.append("Low Vol")
         score = int(score * 0.5) 
 
     if latest['ADX'] < 20:
-        score = int(score * 0.7) # Soften the blow instead of blocking trade completely
+        score = int(score * 0.7) 
         reason.append("Chop Zone")
 
     atr_val = latest['ATR']
@@ -111,8 +111,8 @@ def analyze_fno_trade(df, capital=1000, risk_pct=0.02):
     if score >= 65 and not is_fake_pump:
         signal = "LONG 🟢"
         sl = live_price - (atr_val * 1.5)
-        target = live_price + (atr_val * 3.5) # Expanded Target for TSL
-        tsl = live_price - (atr_val * 0.5) # Dynamic Trailing SL
+        target = live_price + (atr_val * 3.5) 
+        tsl = live_price - (atr_val * 0.5) 
         risk_per_coin = live_price - sl
         qty = (capital * risk_pct) / risk_per_coin if risk_per_coin > 0 else 0
         entry_range = f"${live_price * 0.998:.4f} - ${live_price:.4f}"
@@ -128,7 +128,7 @@ def analyze_fno_trade(df, capital=1000, risk_pct=0.02):
         signal = "WAIT ⚪"
         leverage = "N/A"
 
-    unique_reasons = list(set(reason)) # Remove duplicate reasons
+    unique_reasons = list(set(reason)) 
 
     return {
         "signal": signal,
@@ -140,6 +140,6 @@ def analyze_fno_trade(df, capital=1000, risk_pct=0.02):
         "tsl": round(tsl, 4),
         "qty": round(qty, 4),
         "entry_range": entry_range,
-        "rr": "1:2.5", # Displaying new R:R
+        "rr": "1:2.5", 
         "leverage": leverage
     }
