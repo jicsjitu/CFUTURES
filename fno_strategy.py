@@ -4,7 +4,7 @@ from ta.trend import EMAIndicator, ADXIndicator
 from ta.momentum import RSIIndicator
 from ta.volatility import AverageTrueRange
 
-def analyze_fno_trade(df):
+def analyze_fno_trade(df, capital=1000, risk_pct=0.02):
     if len(df) < 200:
         return {"signal": "WAIT", "score": 0, "reason": "Not enough data"}
 
@@ -46,24 +46,31 @@ def analyze_fno_trade(df):
         score = 0 # Cancel signal if sideways
         reason.append("Sideways Market (Low ADX)")
 
-    # Dynamic Stop Loss & Target Calculation based on Volatility (ATR)
+    # Dynamic Stop Loss, Target, & Position Sizing Calculation
     atr_val = latest['ATR']
     live_price = latest['close']
+    
+    sl, target, qty = 0, 0, 0
+    entry_range = ""
+    leverage = "5x - 10x" # Safe F&O leverage
     
     # Generate Output
     if score >= 65:
         signal = "LONG 🟢"
         sl = live_price - (atr_val * 1.5) # Pro SL logic
         target = live_price + (atr_val * 3.0) # 1:2 Risk Reward
-        leverage = "5x - 10x" # Safe F&O leverage
+        risk_per_coin = live_price - sl
+        qty = (capital * risk_pct) / risk_per_coin if risk_per_coin > 0 else 0
+        entry_range = f"${live_price * 0.998:.4f} - ${live_price:.4f}"
     elif score <= -65:
         signal = "SHORT 🔴"
         sl = live_price + (atr_val * 1.5)
         target = live_price - (atr_val * 3.0)
-        leverage = "5x - 10x"
+        risk_per_coin = sl - live_price
+        qty = (capital * risk_pct) / risk_per_coin if risk_per_coin > 0 else 0
+        entry_range = f"${live_price:.4f} - ${live_price * 1.002:.4f}"
     else:
         signal = "WAIT ⚪"
-        sl, target = 0, 0
         leverage = "N/A"
 
     return {
@@ -73,5 +80,8 @@ def analyze_fno_trade(df):
         "reason": " + ".join(reason) if reason else "No Clear Setup",
         "sl": round(sl, 4),
         "target": round(target, 4),
+        "qty": round(qty, 4),
+        "entry_range": entry_range,
+        "rr": "1:2",
         "leverage": leverage
     }
